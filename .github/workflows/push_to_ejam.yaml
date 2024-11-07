@@ -81,26 +81,3 @@ jobs:
       with:
         tag: ${{ env.new_ejamdata_tag }}
         
-    - name: Update ArrowVersion in EJAM's DESCRIPTION file
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Use the GitHub token stored in secrets
-      run: |
-        # Clone the EJAM_REPO repository using the GitHub token
-        git clone https://github.com/${{ env.EJAM_REPO }}.git
-        cd $(basename ${{ env.EJAM_REPO }})
-    
-        # Configure Git to use the token for authentication
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git remote set-url origin https://$GH_TOKEN@github.com/${{ env.EJAM_REPO }}.git
-    
-        # Checkout the default branch (or specific branch where DESCRIPTION is located)
-        git checkout main
-    
-        # Update the DESCRIPTION file by setting the ArrowVersion to the new release tag
-        sed -i "s/^ArrowVersion: .*/ArrowVersion: ${{ env.new_ejamdata_tag }}/" DESCRIPTION
-    
-        # Commit and push the change
-        git add DESCRIPTION
-        git commit -m "Update ArrowVersion to ${{ env.new_ejamdata_tag }}"
-        git push origin main 
