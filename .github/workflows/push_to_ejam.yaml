@@ -38,12 +38,16 @@ jobs:
         git lfs pull
 
     - name: Get the Latest EJAM Release Tag
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Authenticate with the token
       if: env.arrow_files_modified == 'true'
       run: |
         ejam_release_tag=$(gh release list --repo ${{ env.EJAM_REPO }} --limit 1 --json tagName -q '.[0].tagName')
         echo "ejam_release_tag=$ejam_release_tag" >> $GITHUB_ENV
 
     - name: Delete Latest EJAM Release Assets
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Use the token for authentication
       if: env.arrow_files_modified == 'true'
       run: |
         # Use the stored release tag for deleting assets
@@ -57,9 +61,7 @@ jobs:
       run: |
         gh release upload ${{ env.ejam_release_tag }} '**/*.arrow' --repo ${{ env.EJAM_REPO }}
 
-    - name: Increment EJAMDATA Release Tag
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Use the GitHub token stored in secrets
+    - name: Get Incremented EJAMDATA Release Tag
       run: |
         # Get the latest release tag from the current repo
         latest_tag=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
