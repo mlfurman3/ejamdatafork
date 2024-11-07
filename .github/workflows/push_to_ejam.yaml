@@ -1,0 +1,104 @@
+name: Upload Arrow Files to Latest Release
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  EJAM_REPO: USEPA/EJAM
+
+jobs:
+  upload-arrow-files:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Check if Arrow files are modified
+      id: arrow_files_modified
+      run: |
+        # List modified files in the PR
+        modified_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+        # Check if any Arrow files were modified (based on their file extension or path)
+        if echo "$modified_files" | grep -qE "\.arrow$"; then
+          echo "Arrow files were modified."
+          echo "arrow_files_modified=true" >> $GITHUB_ENV
+        else
+          echo "No Arrow files were modified."
+          echo "arrow_files_modified=false" >> $GITHUB_ENV
+        fi
+
+    - name: Pull Git LFS Files
+      if: env.arrow_files_modified == 'true'
+      run: |
+        # git lfs install
+        git lfs pull
+
+    - name: Get the Latest EJAM Release Tag
+      if: env.arrow_files_modified == 'true'
+      run: |
+        ejam_release_tag=$(gh release list --repo ${{ env.EJAM_REPO }} --limit 1 --json tagName -q '.[0].tagName')
+        echo "ejam_release_tag=$ejam_release_tag" >> $GITHUB_ENV
+
+    - name: Delete Latest EJAM Release Assets
+      if: env.arrow_files_modified == 'true'
+      run: |
+        # Use the stored release tag for deleting assets
+        asset_ids=$(gh release view ${{ env.ejam_release_tag }} --repo ${{ env.EJAM_REPO }} --json assets -q '.assets[].id')
+        for asset_id in $asset_ids; do
+          gh release delete $asset_id --repo ${{ env.EJAM_REPO }} --confirm
+        done
+
+    - name: Upload Arrow Files to Latest EJAM Release
+      if: env.arrow_files_modified == 'true'
+      run: |
+        gh release upload ${{ env.ejam_release_tag }} '**/*.arrow' --repo ${{ env.EJAM_REPO }}
+
+    - name: Increment EJAMDATA Release Tag
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Use the GitHub token stored in secrets
+      run: |
+        # Get the latest release tag from the current repo
+        latest_tag=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+    
+        # If no release exists, start with v0.1.0
+        if [ "$latest_tag" == "null" ]; then
+          new_ejamdata_tag="v0.1.0"
+        else
+          # Increment the version (Assuming version format is like v1.2.3)
+          new_ejamdata_tag=$(echo "$latest_tag" | awk -F. -v OFS=. '{ $NF++; print $0 }')
+        fi
+
+    - name: Create New EJAMData Release
+      uses: elgohr/Github-Release-Action@v5
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag: ${{ env.new_ejamdata_tag }}
+        
+    - name: Update ArrowVersion in EJAM's DESCRIPTION file
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN_PRIVATE_REPO }}  # Use the GitHub token stored in secrets
+      run: |
+        # Clone the EJAM_REPO repository using the GitHub token
+        git clone https://github.com/${{ env.EJAM_REPO }}.git
+        cd $(basename ${{ env.EJAM_REPO }})
+    
+        # Configure Git to use the token for authentication
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin https://$GH_TOKEN@github.com/${{ env.EJAM_REPO }}.git
+    
+        # Checkout the default branch (or specific branch where DESCRIPTION is located)
+        git checkout main
+    
+        # Update the DESCRIPTION file by setting the ArrowVersion to the new release tag
+        sed -i "s/^ArrowVersion: .*/ArrowVersion: ${{ env.new_ejamdata_tag }}/" DESCRIPTION
+    
+        # Commit and push the change
+        git add DESCRIPTION
+        git commit -m "Update ArrowVersion to ${{ env.new_ejamdata_tag }}"
+        git push origin main 
