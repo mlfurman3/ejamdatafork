@@ -21,6 +21,7 @@ jobs:
       run: |
         # List modified files in the PR
         base_commit=$(git merge-base "$GITHUB_SHA" main)
+        echo "base commit: $base_commit"
         echo "Current HEAD commit: $GITHUB_SHA"
 
         modified_files=$(git diff --name-only "$base_commit" "$GITHUB_SHA")
