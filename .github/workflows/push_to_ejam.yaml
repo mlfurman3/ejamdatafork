@@ -64,6 +64,8 @@ jobs:
 
     # keep storage low
     - name: Delete Older Releases (Keep Last 3)
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Get the list of all release tags sorted by date (excluding the latest 3)
         old_releases=$(gh release list --limit 100 --json tagName -q '.[3:].tagName')
