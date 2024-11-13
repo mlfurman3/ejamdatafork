@@ -56,38 +56,18 @@ jobs:
         
         echo "new_tag=$new_ejamdata_tag" >> $GITHUB_ENV
 
-    - name: Create New EJAMData Release
+    - name: Update Latest Release Tag
       if: env.arrow_files_modified == 'true'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
         gh release create ${{ env.new_tag }} -t ${{ env.new_tag }} -n "Automated release for Arrow files"
+        gh release delete ${{ steps.get_latest_tag.outputs.latest_tag }} --yes
 
     - name: Upload Arrow Files to New Release
       if: env.arrow_files_modified == 'true'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release upload ${{ env.new_tag }} '**/*.arrow'
-
-    # keep storage low
-    - name: Delete Older Releases (Keep Last 3)
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Get the list of all release tags sorted by date (excluding the latest 3)
-        total_releases=$(gh release list --limit 100 --json tagName -q 'length')
-
-        # Check if old_releases is empty
-        if [[ "$total_releases" -le 1 ]]; then
-          exit 0
-        fi
+        gh release upload ${{ env.new_tag }} 'data/*.arrow'
         
-        # Get the list of old releases (excluding the latest 3)
-        old_releases=$(gh release list --limit 100 --json tagName -q '.[1:].tagName')
-
-        # Loop through and delete each old release
-        for tag in $old_releases; do
-          echo "Deleting old release: $tag"
-          gh release delete $tag --yes
-        done
