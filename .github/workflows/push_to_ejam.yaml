@@ -70,8 +70,13 @@ jobs:
         # Get the list of all release tags sorted by date (excluding the latest 3)
         old_releases=$(gh release list --limit 100 --json tagName -q '.[3:].tagName')
         
+        # Check if old_releases is empty
+        if [[ -z "$old_releases" ]]; then
+          exit 0
+        fi
+        
         # Loop through and delete each old release
         for tag in $old_releases; do
-          echo "Deleting release: $tag"
+          echo "Deleting old release: $tag"
           gh release delete $tag --yes
         done
