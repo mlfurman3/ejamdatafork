@@ -68,13 +68,16 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Get the list of all release tags sorted by date (excluding the latest 3)
-        old_releases=$(gh release list --limit 100 --json tagName -q '.[3:].tagName')
-        
+        total_releases=$(gh release list --limit 100 --json tagName -q 'length')
+
         # Check if old_releases is empty
-        if [[ -z "$old_releases" ]]; then
+        if [[ "$total_releases" -lt 4 ]]; then
           exit 0
         fi
         
+        # Get the list of old releases (excluding the latest 3)
+        old_releases=$(gh release list --limit 100 --json tagName -q '.[3:].tagName')
+
         # Loop through and delete each old release
         for tag in $old_releases; do
           echo "Deleting old release: $tag"
