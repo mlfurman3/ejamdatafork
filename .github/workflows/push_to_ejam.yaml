@@ -63,6 +63,6 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release create ${{ env.new_tag }} ./data/*.arrow -t "${{ env.new_tag }}"
+        gh release create ${{ env.new_tag }} ./data/*.arrow --title "${{ env.new_tag }}" --notes "latest release"
         gh release delete ${{ env.latest_tag }} --yes
         
