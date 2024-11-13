@@ -20,8 +20,9 @@ jobs:
       id: arrow_files_modified
       run: |
         # List modified files in the PR
-        modified_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-
+        base_commit=$(git merge-base HEAD main)
+        modified_files=$(git diff --name-only "$base_commit" HEAD)
+        
         # Check if any Arrow files were modified (based on their file extension or path)
         if echo "$modified_files" | grep -qE "\.arrow$"; then
           echo "Arrow files were modified."
