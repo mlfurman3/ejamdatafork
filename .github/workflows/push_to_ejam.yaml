@@ -20,11 +20,10 @@ jobs:
       id: arrow_files_modified
       run: |
         # List modified files in the PR
-        base_commit=$(git merge-base HEAD main)
         echo "Base commit: $GITHUB_REF"
         echo "Current HEAD commit: $GITHUB_SHA"
 
-        modified_files=$(git diff --name-only "$base_commit" "$GITHUB_REF")
+        modified_files=$(git diff --name-only "$GITHUB_REF" "$GITHUB_SHA")
         echo "Modified files: $modified_files"
         
         # Check if any Arrow files were modified (based on their file extension or path)
