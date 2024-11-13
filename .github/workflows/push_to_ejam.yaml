@@ -55,12 +55,14 @@ jobs:
         fi
         
         echo "new_tag=$new_ejamdata_tag" >> $GITHUB_ENV
+        echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
 
     - name: Update Latest Release with New Arrow Files
       if: env.arrow_files_modified == 'true'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release create ${{ env.new_tag }} ./data/*.arrow -t ${{ env.new_tag }}
-        gh release delete ${{ steps.get_latest_tag.outputs.latest_tag }} --yes
+        gh release create ${{ env.new_tag }} ./data/*.arrow -t "${{ env.new_tag }}"
+        gh release delete ${{ env.latest_tag }} --yes
         
