@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Check if Arrow files are modified
       id: arrow_files_modified
@@ -71,12 +71,12 @@ jobs:
         total_releases=$(gh release list --limit 100 --json tagName -q 'length')
 
         # Check if old_releases is empty
-        if [[ "$total_releases" -lt 4 ]]; then
+        if [[ "$total_releases" -le 1 ]]; then
           exit 0
         fi
         
         # Get the list of old releases (excluding the latest 3)
-        old_releases=$(gh release list --limit 100 --json tagName -q '.[3:].tagName')
+        old_releases=$(gh release list --limit 100 --json tagName -q '.[1:].tagName')
 
         # Loop through and delete each old release
         for tag in $old_releases; do
