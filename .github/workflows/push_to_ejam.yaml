@@ -56,11 +56,15 @@ jobs:
 
     - name: Create New EJAMData Release
       if: env.arrow_files_modified == 'true'
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         gh release create ${{ env.new_tag }} -t ${{ env.new_tag }} -n "Automated release for Arrow files"
 
     - name: Upload Arrow Files to New Release
       if: env.arrow_files_modified == 'true'
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         gh release upload ${{ env.new_tag }} '**/*.arrow'
 
